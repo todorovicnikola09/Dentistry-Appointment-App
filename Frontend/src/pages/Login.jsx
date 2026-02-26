@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
-import axios from 'axios'; // DODATO
-import { useNavigate } from 'react-router-dom'; // DODATO
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // DODATO
+  const navigate = useNavigate();
 
   const paleta = {
     white: '#F4F2F3',
@@ -20,7 +20,6 @@ const Login = () => {
     e.preventDefault();
     
     try {
-      // Pozivamo tvoj C# API (proveri port, verovatno je 5169)
       const response = await axios.post('http://localhost:5169/api/login', {
         Email: email,
         Password: password
@@ -28,17 +27,21 @@ const Login = () => {
 
       console.log("Uspešan login:", response.data);
 
-      // Čuvamo podatke o korisniku u localStorage
-      localStorage.setItem('token', response.data.Token);
-      localStorage.setItem('role', response.data.Role);
-      localStorage.setItem('userId', response.data.Id);
-      localStorage.setItem('userName', response.data.Ime);
+    
+
+// PAZI NA VELIKA SLOVA (proveri šta ti tačno stiže u konzoli pod "Uspešan login")
+localStorage.setItem('token', response.data.Token);
+localStorage.setItem('role', response.data.Role);
+localStorage.setItem('userId', response.data.Id);
+localStorage.setItem('userName', response.data.Ime); // Proveri da li je Ime ili ime
+localStorage.setItem('userSurname', response.data.Prezime); // Proveri da li je Prezime ili prezime
 
       // LOGIKA PREUSMERAVANJA
-      if (response.data.Role === 'Pacijent') {
-        navigate('/moje-rezervacije'); // Pacijenta vodimo na njegove rezervacije
+      // I Pacijent i Stomatolog idu na rezervacije, ali će tamo videti različite podatke
+      if (response.data.Role === 'Pacijent' || response.data.Role === 'Stomatolog') {
+        navigate('/moje-rezervacije'); 
       } else {
-        navigate('/'); // Admina ili Stomatologa vodimo na pocetnu za sada
+        navigate('/'); 
       }
 
     } catch (err) {
@@ -56,7 +59,6 @@ const Login = () => {
       backgroundColor: paleta.white,
       fontFamily: "'Playfair Display', serif"
     }}>
-      {/* Dugme za povratak na početnu */}
       <a href="/" style={{ 
         position: 'absolute', top: '40px', left: '40px', 
         display: 'flex', alignItems: 'center', gap: '8px', 
@@ -83,7 +85,6 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Email polje */}
           <div style={{ position: 'relative', width: '100%' }}>
             <Mail size={20} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: paleta.blueGray }} />
             <input 
@@ -105,7 +106,6 @@ const Login = () => {
             />
           </div>
 
-          {/* Lozinka polje */}
           <div style={{ position: 'relative', width: '100%' }}>
             <Lock size={20} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: paleta.blueGray }} />
             <input 

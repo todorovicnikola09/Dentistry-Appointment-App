@@ -4,6 +4,7 @@ import Pocetna from '../pages/Pocetna';
 import Login from '../pages/Login';
 import Usluge from '../pages/Usluge';
 import MojeRezervacije from '../pages/MojeRezervacije';
+import Stomatolozi from '../pages/Stomatolozi';
 
 const AppRoutes = () => {
   return (
@@ -12,6 +13,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/usluge" element={<Usluge />} />
       <Route path="/moje-rezervacije" element={<MojeRezervacije />} />
+      <Route path="/stomatolozi" element={<Stomatolozi />} />
     </Routes>
   );
 };
