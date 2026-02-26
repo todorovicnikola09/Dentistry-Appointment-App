@@ -19,7 +19,8 @@ namespace API.Controllers
             {
                 Broker.Instance().OtvoriKonekciju();
 
-                string upit = "SELECT Id, naziv, opis, cena FROM Usluga";
+                // Koristimo aliase (AS) da budemo 100% sigurni u nazive kolona
+                string upit = "SELECT id AS Id, naziv AS Naziv, opis AS Opis, cena AS Cena FROM Usluga";
                 DataTable dt = Broker.Instance().IzvrsiUpit(upit);
 
                 List<Usluga> listaUsluga = new List<Usluga>();
@@ -28,11 +29,10 @@ namespace API.Controllers
                 {
                     listaUsluga.Add(new Usluga
                     {
-                        // Koristimo Convert radi sigurnosti ako su tipovi u bazi labavi
                         Id = Convert.ToInt32(row["Id"]),
-                        Naziv = row["naziv"]?.ToString(),
-                        Opis = row["opis"]?.ToString(),
-                        Cena = Convert.ToDecimal(row["cena"])
+                        Naziv = row["Naziv"]?.ToString(),
+                        Opis = row["Opis"]?.ToString(),
+                        Cena = Convert.ToDecimal(row["Cena"])
                     });
                 }
 
@@ -40,7 +40,6 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                // Vraćamo tačnu grešku da bi u Network tabu video šta nije u redu
                 return BadRequest("Greška u bazi: " + ex.Message);
             }
             finally

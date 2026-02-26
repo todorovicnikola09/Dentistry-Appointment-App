@@ -3,59 +3,50 @@ using Domen;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System;
+using System.Collections.Generic;
 
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/korisnik")]
     public class StomatologController : ControllerBase
     {
-        [HttpGet]
-        public IActionResult Get()
+        [HttpGet("stomatolozi")]
+        public IActionResult GetStomatolozi()
         {
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                DataTable dt = Broker.Instance().IzvrsiUpit("SELECT * FROM Korisnici WHERE UlogaKorisnika = 'Stomatolog'");
-                List<Stomatolog> lista = new List<Stomatolog>();
+
+                // Koristimo tvoja imena kolona iz baze: id, ime, prezime, email, brojLicence
+                string upit = "SELECT id, ime, prezime, email, brojLicence FROM Korisnik WHERE uloga = 'Stomatolog'";
+
+                DataTable dt = Broker.Instance().IzvrsiUpit(upit);
+                var lista = new List<object>();
+
                 foreach (DataRow dr in dt.Rows)
                 {
-                    lista.Add(new Stomatolog { Id = (int)dr["Id"], Ime = dr["Ime"].ToString(), Prezime = dr["Prezime"].ToString(), BrojLicence = dr["BrojLicence"].ToString() });
+                    lista.Add(new
+                    {
+                        // Ovo su ključevi koje React vidi
+                        id = (int)dr["id"],
+                        ime = dr["ime"].ToString(),
+                        prezime = dr["prezime"].ToString(),
+                        email = dr["email"].ToString(),
+                        brojLicence = dr["brojLicence"].ToString()
+                    });
                 }
                 return Ok(lista);
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-            finally { Broker.Instance().ZatvoriKonekciju(); }
-        }
-        [HttpPost]
-        public IActionResult Insert([FromBody] Usluga u)
-        {
-            try
+            catch (Exception ex)
             {
-                Broker.Instance().OtvoriKonekciju();
-                string upit = "INSERT INTO Usluge (Naziv, Cena) VALUES (@naziv, @cena)";
-                List<SqlParameter> p = new List<SqlParameter> {
-            new SqlParameter("@naziv", u.Naziv),
-            new SqlParameter("@cena", u.Cena)
-        };
-                Broker.Instance().IzvrsiKomandu(upit, p);
-                return Ok("Nova usluga dodata u cenovnik!");
+                return BadRequest("Greška pri učitavanju stomatologa: " + ex.Message);
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-            finally { Broker.Instance().ZatvoriKonekciju(); }
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            try
+            finally
             {
-                Broker.Instance().OtvoriKonekciju();
-                Broker.Instance().IzvrsiKomandu("DELETE FROM Usluge WHERE Id=" + id, null);
-                return Ok("Usluga uklonjena!");
+                Broker.Instance().ZatvoriKonekciju();
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-            finally { Broker.Instance().ZatvoriKonekciju(); }
         }
 
         [HttpPut("postavi-mentora")]
@@ -64,12 +55,13 @@ namespace API.Controllers
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                // Ovde pokazujemo SELF-TRANSITION: MentorId pokazuje na Id u istoj tabeli
-                string upit = "UPDATE Korisnici SET MentorId=@mId WHERE Id=@sId AND UlogaKorisnika='Stomatolog'";
+                string upit = "UPDATE Korisnik SET mentorId=@mId WHERE id=@sId AND uloga='Stomatolog'";
+
                 List<SqlParameter> p = new List<SqlParameter> {
-            new SqlParameter("@mId", mentorId),
-            new SqlParameter("@sId", stomatologId)
-        };
+                    new SqlParameter("@mId", mentorId),
+                    new SqlParameter("@sId", stomatologId)
+                };
+
                 Broker.Instance().IzvrsiKomandu(upit, p);
                 return Ok("Mentor uspešno dodeljen!");
             }
