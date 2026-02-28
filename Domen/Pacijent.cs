@@ -10,8 +10,6 @@ namespace Domen
     {
         public string JMBG { get; set; } 
         public string Telefon { get; set; } 
-
-        // Asocijacija: Jedan pacijent ima više termina
         public virtual List<Termin> Termini { get; set; } = new List<Termin>();
     }
 }

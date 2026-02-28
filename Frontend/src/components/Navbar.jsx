@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -6,24 +6,28 @@ const Navbar = () => {
   const location = useLocation(); 
   
   const token = localStorage.getItem('token');
-  
-  // Funkcija za bezbedno uzimanje iz storage-a (da izbegnemo "undefined" tekst)
-  const getSafeStorage = (key) => {
-    const value = localStorage.getItem(key);
-    if (value === "undefined" || value === null) return "";
-    return value;
-  };
+  const role = localStorage.getItem('role');
+  const ime = localStorage.getItem('userName');
+  const prezime = localStorage.getItem('userSurname');
 
-  const ime = getSafeStorage('userName');
-  const prezime = getSafeStorage('userSurname'); 
-  const role = getSafeStorage('role');
-  const isUlogovan = !!token;
+  const isUlogovan = token && token !== "undefined" && token !== "null";
+  const isHome = location.pathname === "/";
+
+  useEffect(() => {
+    if (!isUlogovan) {
+      localStorage.removeItem('role');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userSurname');
+      localStorage.removeItem('token');
+    }
+  }, [isUlogovan]);
 
   const paleta = { 
     zelena: '#4A5D50', 
     bela: '#FFFFFF', 
     tekst: '#1A1A1A', 
-    sivaLinija: '#ddd'
+    sivaLinija: '#ddd',
+    adminZlatna: '#D4AF37'
   };
 
   const handleLogout = () => {
@@ -31,82 +35,116 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleKontaktClick = () => {
+    const element = document.getElementById('kontakt-sekcija');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const linkStyle = { 
     textDecoration: 'none', 
-    color: paleta.zelena, 
+    color: isHome ? paleta.bela : paleta.zelena, 
     fontWeight: '600', 
     fontSize: '1.1rem', 
     margin: '0 20px', 
-    transition: '0.3s' 
+    transition: '0.3s',
+    cursor: 'pointer'
+  };
+
+  const adminLinkStyle = {
+    ...linkStyle,
+    color: isHome ? paleta.bela : paleta.tekst 
   };
 
   const buttonStyle = { 
-    backgroundColor: paleta.zelena, 
-    color: 'white', 
+    backgroundColor: isHome ? 'rgba(255,255,255,0.2)' : paleta.zelena, 
+    color: paleta.bela, 
     padding: '10px 22px', 
-    border: 'none', 
+    border: isHome ? `1px solid ${paleta.bela}` : 'none', 
     borderRadius: '30px', 
     cursor: 'pointer', 
     fontSize: '0.95rem', 
     fontWeight: 'bold', 
     marginLeft: '15px', 
     display: 'flex', 
-    alignItems: 'center', 
-    transition: '0.3s'
+    alignItems: 'center',
+    backdropFilter: isHome ? 'blur(5px)' : 'none'
   };
+
+  if (location.pathname === '/login') return null;
 
   return (
     <nav style={{ 
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      padding: '15px 8%', 
-      backgroundColor: 'white', 
-      boxShadow: '0 2px 10px rgba(0,0,0,0.05)', 
-      position: 'sticky', 
-      top: 0, 
-      zIndex: 1000 
+      padding: isHome ? '30px 8%' : '15px 8%', 
+      backgroundColor: isHome ? 'transparent' : paleta.bela, 
+      boxShadow: isHome ? 'none' : '0 2px 10px rgba(0,0,0,0.1)',
+      position: isHome ? 'fixed' : 'sticky',
+      top: 0,
+      left: 0,
+      right: 0,
+      width: '100%',
+      zIndex: 1000,
+      boxSizing: 'border-box'
     }}>
-      {/* LEVO: LOGO */}
-      <div onClick={() => navigate('/')} style={{ fontSize: '1.8rem', fontWeight: '900', color: paleta.zelena, letterSpacing: '2px', cursor: 'pointer' }}>
+      <div onClick={() => navigate('/')} style={{ 
+        fontSize: '1.8rem', 
+        fontWeight: '900', 
+        color: isHome ? paleta.bela : paleta.zelena, 
+        letterSpacing: '3px', 
+        cursor: 'pointer' 
+      }}>
         DENTIFY
       </div>
 
-      {/* DESNO: DINAMIČKI SADRŽAJ */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        
         {isUlogovan ? (
           <>
             <span style={{ 
-                color: paleta.tekst, 
+                color: isHome ? paleta.bela : paleta.tekst, 
                 fontWeight: '500', 
                 fontSize: '1.05rem', 
                 paddingRight: '20px',
-                borderRight: `1px solid ${paleta.sivaLinija}`
+                borderRight: `1px solid ${isHome ? 'rgba(255,255,255,0.3)' : paleta.sivaLinija}`
             }}>
-                Zdravo, <b style={{color: paleta.zelena}}>{ime} {prezime}</b>
+                Zdravo, <b style={{color: role === 'Admin' ? paleta.adminZlatna : (isHome ? paleta.bela : paleta.zelena)}}>
+                  {role === 'Admin' ? 'Admin ' : ''}{ime} {prezime !== "undefined" ? prezime : ""}
+                </b>
             </span>
 
-            {/* Ako je stomatolog, sakrij marketing linkove */}
-            {role !== 'Stomatolog' && (
+            <Link to="/" style={role === 'Admin' ? adminLinkStyle : linkStyle}>Početna</Link>
+
+            {role === 'Admin' ? (
               <>
-                <Link to="/usluge" style={linkStyle}>Usluge</Link>
-                <Link to="/stomatolozi" style={linkStyle}>Stomatolozi</Link>
+                <Link to="/admin/pacijenti" style={adminLinkStyle}>Pacijenti</Link>
+                <Link to="/admin/stomatolozi" style={adminLinkStyle}>Stomatolozi</Link>
+                <Link to="/admin/usluge" style={adminLinkStyle}>Usluge</Link>
+              </>
+            ) : (
+              <>
+                {role !== 'Stomatolog' && (
+                  <Link to="/usluge" style={linkStyle}>Usluge</Link>
+                )}
+                <Link to="/moje-rezervacije" style={linkStyle}>Moji termini</Link>
               </>
             )}
-
-            {/* MOJI TERMINI */}
-            {location.pathname !== '/moje-rezervacije' && (
-               <Link to="/moje-rezervacije" style={linkStyle}>Moji termini</Link>
-            )}
-
             <button onClick={handleLogout} style={buttonStyle}>Odjavi se</button>
           </>
         ) : (
           <>
             <Link to="/" style={linkStyle}>Početna</Link>
+            <Link to="/usluge" style={linkStyle}>Usluge</Link>
+            <span onClick={handleKontaktClick} style={linkStyle}>Kontakt</span>
             <button onClick={() => navigate('/login')} style={buttonStyle}>
-               <span style={{ marginRight: '8px' }}>👤</span> Prijavi se
+                <span style={{ marginRight: '8px' }}>👤</span> Prijavi se
             </button>
           </>
         )}

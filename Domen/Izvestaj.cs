@@ -10,8 +10,6 @@ namespace Domen
     {
         public int Id { get; set; }
         public string OpisDijagnoze { get; set; }
-
-        // Kompozicija: Izvestaj ne postoji bez Termina
         public Termin Termin { get; set; }
         public double UkupnaCena { get; set; }
     }

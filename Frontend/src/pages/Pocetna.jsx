@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import { Globe, Shield, Users, Calendar, User } from 'lucide-react';
+import { Globe, Shield, Users, Calendar } from 'lucide-react';
 
 import mainHero from '../assets/homepage.png'; 
 import hollywoodImg from '../assets/hollywood-smile.png';
@@ -11,18 +11,15 @@ const Pocetna = () => {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
 
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const isUlogovan = token && token !== "undefined" && token !== "null";
+
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const scrollToFooter = () => {
-    const footer = document.getElementById('kontakt-sekcija');
-    if (footer) {
-      footer.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   const scale = Math.max(1, 1.1 - scrollY / 5000); 
 
@@ -33,6 +30,8 @@ const Pocetna = () => {
     olive: '#64766A',
     text: '#1a2a3a'
   };
+
+  const trebaPrikazatiDugme = !isUlogovan || role === 'Pacijent';
 
   return (
     <div style={{ 
@@ -45,46 +44,6 @@ const Pocetna = () => {
       boxSizing: 'border-box'
     }}>
       
-      {/* NAVBAR */}
-      <nav style={{ 
-        position: 'absolute', top: 0, left: 0, width: '100%', 
-        padding: '40px 8%', display: 'flex', justifyContent: 'space-between', 
-        alignItems: 'center', zIndex: 100, boxSizing: 'border-box' 
-      }}>
-        <h2 style={{ color: '#fff', margin: 0, cursor: 'pointer', letterSpacing: '3px', fontSize: '2rem' }} onClick={() => navigate('/')}>
-          DENTIFY
-        </h2>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '50px' }}>
-          <div style={{ display: 'flex', gap: '40px', color: '#fff', fontWeight: '500', fontSize: '1.2rem' }}>
-            {/* NAVIGACIJA NA USLUGE */}
-            <span onClick={() => navigate('/usluge')} style={{ cursor: 'pointer' }}>Usluge</span>
-         
-            <span onClick={scrollToFooter} style={{ cursor: 'pointer' }}>Kontakt</span>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/login')} 
-            style={{
-              backgroundColor: paleta.olive,
-              color: '#fff',
-              padding: '15px 35px',
-              borderRadius: '50px',
-              border: 'none',
-              fontWeight: '600',
-              fontSize: '1.1rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-            }}
-          >
-            <User size={22} /> Prijavi se
-          </button>
-        </div>
-      </nav>
-
       {/* HERO SEKCIJA */}
       <header style={{
         height: '100vh',
@@ -93,7 +52,8 @@ const Pocetna = () => {
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        paddingTop: '80px'
       }}>
         <div style={{
           position: 'absolute',
@@ -123,23 +83,27 @@ const Pocetna = () => {
           <p style={{ fontSize: '1.5rem', fontWeight: '300', margin: '0 auto', opacity: 0.95, lineHeight: '1.6' }}>
             Otkrijte moć digitalne stomatologije u službi vašeg zdravlja. Dizajniramo osmehe koji zrače samopouzdanjem.
           </p>
-          {/* DUGME KOJE VODI NA USLUGE */}
-          <button 
-            onClick={() => navigate('/usluge')}
-            style={{ 
-              marginTop: '50px', padding: '20px 60px', backgroundColor: paleta.purple, 
-              color: '#fff', border: 'none', borderRadius: '50px', fontWeight: '600', fontSize: '1.3rem', cursor: 'pointer',
-              boxShadow: '0 15px 30px rgba(0,0,0,0.2)'
-            }}
-          >
-            Naše usluge
-          </button>
+          
+          {/* USLOVNI RENDER ZA DUGME */}
+          {trebaPrikazatiDugme && (
+            <button 
+              onClick={() => navigate('/usluge')}
+              style={{ 
+                marginTop: '50px', padding: '20px 60px', backgroundColor: paleta.purple, 
+                color: '#fff', border: 'none', borderRadius: '50px', fontWeight: '600', fontSize: '1.3rem', cursor: 'pointer',
+                boxShadow: '0 15px 30px rgba(0,0,0,0.2)'
+              }}
+            >
+              Naše usluge
+            </button>
+          )}
         </div>
       </header>
 
       {/* SADRŽAJ */}
       <div style={{ position: 'relative', zIndex: 10, backgroundColor: '#fff', width: '100%', boxSizing: 'border-box' }}>
         
+        {/* Hollywood Smile */}
         <section style={{ padding: '140px 10%', display: 'flex', alignItems: 'center', gap: '100px', flexWrap: 'wrap', boxSizing: 'border-box' }}>
           <div style={{ flex: '1 1 500px' }}>
             <span style={{ color: paleta.blueGray, fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '1.1rem' }}>Estetika</span>
@@ -148,18 +112,13 @@ const Pocetna = () => {
               Umetnost kreiranja harmonije lica. Uz najfinije keramičke vinire, postižemo idealan oblik, 
               boju i simetriju o kojoj ste oduvek sanjali. Svaki pacijent dobija personalizovan plan.
             </p>
-            <button 
-              onClick={() => navigate('/usluge')}
-              style={{ padding: '15px 45px', border: `2px solid ${paleta.purple}`, background: 'none', color: paleta.purple, fontWeight: '700', fontSize: '1.1rem', cursor: 'pointer', borderRadius: '8px' }}
-            >
-              Saznaj više
-            </button>
           </div>
           <div style={{ flex: '1 1 500px' }}>
             <img src={hollywoodImg} alt="Hollywood Smile" style={{ width: '100%', borderRadius: '30px', boxShadow: '0 30px 60px rgba(0,0,0,0.18)' }} />
           </div>
         </section>
 
+        {/* Nevidljive proteze */}
         <section style={{ padding: '140px 10%', display: 'flex', alignItems: 'center', gap: '100px', flexWrap: 'wrap', flexDirection: 'row-reverse', backgroundColor: paleta.white, boxSizing: 'border-box' }}>
           <div style={{ flex: '1 1 500px' }}>
             <span style={{ color: paleta.olive, fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '1.1rem' }}>Ortodoncija</span>
@@ -168,12 +127,6 @@ const Pocetna = () => {
               Ispravite zube diskretno. Naše providne folije (aligneri) su gotovo neprimetne, 
               udobne za nošenje i omogućavaju vam da se nesmetano smejete tokom celog procesa transformacije.
             </p>
-            <button 
-              onClick={() => navigate('/usluge')}
-              style={{ padding: '15px 45px', backgroundColor: paleta.olive, border: 'none', color: '#fff', fontWeight: '700', fontSize: '1.1rem', cursor: 'pointer', borderRadius: '8px' }}
-            >
-              Istraži opcije
-            </button>
           </div>
           <div style={{ flex: '1 1 500px' }}>
             <img src={retainersImg} alt="Nevidljive proteze" style={{ width: '100%', borderRadius: '30px', boxShadow: '0 30px 60px rgba(0,0,0,0.18)' }} />

@@ -18,7 +18,22 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     
+    if (email === 'admin@gmail.com' && password === 'admin123') {
+      console.log("Prijava kao Admin (Simulacija)");
+      
+      localStorage.setItem('token', 'fake-admin-token-123');
+      localStorage.setItem('role', 'Admin');
+      localStorage.setItem('userId', '0');
+      localStorage.setItem('userName', 'Glavni');
+      localStorage.setItem('userSurname', 'Administrator');
+
+      navigate('/'); 
+      return; 
+    }
+    // -------------------------------
+
     try {
       const response = await axios.post('http://localhost:5169/api/login', {
         Email: email,
@@ -27,22 +42,13 @@ const Login = () => {
 
       console.log("Uspešan login:", response.data);
 
-    
+      localStorage.setItem('token', response.data.Token);
+      localStorage.setItem('role', response.data.Role);
+      localStorage.setItem('userId', response.data.Id);
+      localStorage.setItem('userName', response.data.Ime);
+      localStorage.setItem('userSurname', response.data.Prezime);
 
-// PAZI NA VELIKA SLOVA (proveri šta ti tačno stiže u konzoli pod "Uspešan login")
-localStorage.setItem('token', response.data.Token);
-localStorage.setItem('role', response.data.Role);
-localStorage.setItem('userId', response.data.Id);
-localStorage.setItem('userName', response.data.Ime); // Proveri da li je Ime ili ime
-localStorage.setItem('userSurname', response.data.Prezime); // Proveri da li je Prezime ili prezime
-
-      // LOGIKA PREUSMERAVANJA
-      // I Pacijent i Stomatolog idu na rezervacije, ali će tamo videti različite podatke
-      if (response.data.Role === 'Pacijent' || response.data.Role === 'Stomatolog') {
-        navigate('/moje-rezervacije'); 
-      } else {
-        navigate('/'); 
-      }
+      navigate('/'); 
 
     } catch (err) {
       console.error(err);

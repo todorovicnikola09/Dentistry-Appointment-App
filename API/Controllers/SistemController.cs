@@ -8,14 +8,12 @@ namespace API.Controllers
     [Route("api/[controller]")]
     public class SistemController : ControllerBase
     {
-        // 1. Dugme za testnog pacijenta
         [HttpPost("testni-pacijent")]
         public IActionResult DodajPacijenta()
         {
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                // Generišemo nasumičan broj da bi email bio unikatan
                 int r = new Random().Next(100, 999);
                 string upit = $@"INSERT INTO Korisnici (Ime, Prezime, Email, Lozinka, UlogaKorisnika, JMBG, Telefon) 
                                 VALUES ('Pacijent', '{r}', 'pacijent{r}@test.com', '123', 'Pacijent', '1234567890123', '060123456')";
@@ -27,7 +25,6 @@ namespace API.Controllers
             finally { Broker.Instance().ZatvoriKonekciju(); }
         }
 
-        // 2. Dugme za testnu uslugu
         [HttpPost("testna-usluga")]
         public IActionResult DodajUslugu()
         {
@@ -46,7 +43,6 @@ namespace API.Controllers
             finally { Broker.Instance().ZatvoriKonekciju(); }
         }
 
-        // 3. Inicijalni Stomatolog (ovo ti treba da bi uopšte mogla da zakazuješ)
         [HttpPost("inicijalizuj-doktora")]
         public IActionResult InicijalizujDoktora()
         {

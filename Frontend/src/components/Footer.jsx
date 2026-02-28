@@ -2,10 +2,8 @@ import React from 'react';
 import { Instagram, Facebook, Youtube, Mail, MapPin, Phone } from 'lucide-react';
 
 const Footer = () => {
-  // Provera uloge iz localStorage-a
   const role = localStorage.getItem('role')?.toLowerCase();
 
-  // Ako je uloga Stomatolog, ne renderuj ništa
   if (role === 'stomatolog') return null;
 
   return (

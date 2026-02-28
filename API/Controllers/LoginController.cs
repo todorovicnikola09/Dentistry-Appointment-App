@@ -14,7 +14,6 @@ namespace API.Controllers
         {
             try
             {
-                // 1. HARDKODIRAN ADMIN (nije u bazi)
                 if (request.Email == "admin@dentify.com" && request.Password == "admin123")
                 {
                     return Ok(new { Role = "Admin", Token = "admin-token", Ime = "Administrator" });
@@ -22,7 +21,6 @@ namespace API.Controllers
 
                 Broker.Instance().OtvoriKonekciju();
 
-                // 2. PROVERA U TABELI KORISNICI
                 string upit = "SELECT * FROM Korisnik WHERE email = @email AND lozinka = @pass";
                 var parametri = new List<SqlParameter> {
                     new SqlParameter("@email", request.Email),
@@ -34,7 +32,7 @@ namespace API.Controllers
                 if (dt.Rows.Count > 0)
                 {
                     DataRow row = dt.Rows[0];
-                    string uloga = row["uloga"].ToString(); // Ovde citamo 'Pacijent' ili 'Stomatolog'
+                    string uloga = row["uloga"].ToString(); 
 
                     return Ok(new
                     {
