@@ -28,7 +28,7 @@ const Footer = () => {
         </div>
         <div>
           <h4 style={{ marginBottom: '20px', color: '#C0A9BD' }}>Radno vreme</h4>
-          <p style={{ opacity: 0.9, lineHeight: '1.8' }}>Ponedeljak - Petak: 09:00 - 20:00<br/>Subota: 10:00 - 15:00<br/>Nedelja: Zatvoreno</p>
+          <p style={{ opacity: 0.9, lineHeight: '1.8' }}>Ponedeljak - Petak: 09:00 - 16:00<br/>Subota: 10:00 - 15:00<br/>Nedelja: Zatvoreno</p>
         </div>
       </div>
       <div style={{ borderTop: '1px solid rgba(244,242,243,0.1)', paddingTop: '20px', textAlign: 'center', opacity: 0.6, fontSize: '14px' }}>

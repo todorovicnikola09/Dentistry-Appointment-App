@@ -6,6 +6,18 @@ const AdminUsluge = () => {
   const [formData, setFormData] = useState({ naziv: '', opis: '', cena: '' });
   const [editId, setEditId] = useState(null);
 
+  // MODAL STATE ZA PORUKE
+  const [statusModal, setStatusModal] = useState({ 
+    show: false, 
+    naslov: '', 
+    poruka: '', 
+    tip: 'info', 
+    akcija: null 
+  });
+
+  const prikaziPoruku = (naslov, poruka, tip = 'info', akcija = null) => {
+    setStatusModal({ show: true, naslov, poruka, tip, akcija });
+  };
 
   const popuniTestnuUslugu = () => {
     const randomUsluge = [
@@ -31,7 +43,7 @@ const AdminUsluge = () => {
 
   const handleSacuvaj = async () => {
     if (!formData.naziv || !formData.cena) {
-        alert("Molimo popunite naziv i cenu.");
+        prikaziPoruku("Pažnja", "Molimo popunite naziv i cenu.");
         return;
     }
 
@@ -45,36 +57,37 @@ const AdminUsluge = () => {
       if (editId) {
         const cistId = String(editId).includes(':') ? editId.split(':')[0] : editId;
         await axios.put(`http://localhost:5169/api/Usluga/${cistId}`, model);
-        alert("Usluga uspešno izmenjena!");
+        prikaziPoruku("Uspeh", "Usluga uspešno izmenjena!");
       } else {
         await axios.post('http://localhost:5169/api/Usluga', model);
-        alert("Usluga uspešno dodata!");
+        prikaziPoruku("Uspeh", "Usluga uspešno dodata!");
       }
 
       setFormData({ naziv: '', opis: '', cena: '' });
       setEditId(null);
       fetchUsluge();
     } catch (err) {
-      console.error(err);
-      alert("Greška pri čuvanju: " + (err.response?.data || "Server nije odgovorio"));
+      prikaziPoruku("Greška", "Greška pri čuvanju: " + (err.response?.data || "Server nije odgovorio"));
     }
   };
 
-  const obrisi = async (id) => {
-    if(!id) {
-        alert("Greška: ID nije validan.");
-        return;
-    }
+  const obrisi = (id) => {
+    if(!id) return;
     const cistId = String(id).includes(':') ? id.split(':')[0] : id;
-    if(window.confirm(`Da li ste sigurni da želite da obrišete uslugu ID: ${cistId}?`)) {
-      try {
-        await axios.delete(`http://localhost:5169/api/Usluga/${cistId}`);
-        fetchUsluge();
-      } catch (err) {
-        console.error(err);
-        alert("Greška pri brisanju!");
-      }
-    }
+
+    prikaziPoruku(
+        "Brisanje", 
+        "Da li ste sigurni da želite da obrišete ovu uslugu?", 
+        "confirm", 
+        async () => {
+            try {
+                await axios.delete(`http://localhost:5169/api/Usluga/${cistId}`);
+                fetchUsluge();
+            } catch (err) {
+                prikaziPoruku("Greška", "Greška pri brisanju!");
+            }
+        }
+    );
   };
 
   const pripremiIzmenu = (u) => {
@@ -85,19 +98,40 @@ const AdminUsluge = () => {
       cena: u.cena || u.Cena || '',
       opis: u.opis || u.Opis || ''
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div style={{ padding: '120px 40px 40px 40px', backgroundColor: '#F4F2F3', minHeight: '100vh' }}>
+    <div style={{ padding: '120px 40px 40px 40px', backgroundColor: '#F4F2F3', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      
+      {/* --- CUSTOM MODAL (ISTI KAO NA PROŠLOJ STRANICI) --- */}
+      {statusModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+            <div style={{ background: 'white', padding: '35px', borderRadius: '25px', width: '400px', textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ color: '#4A5D50', fontSize: '1.8rem', marginBottom: '15px' }}>{statusModal.naslov}</h3>
+                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.4' }}>{statusModal.poruka}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    {statusModal.tip === 'confirm' ? (
+                        <>
+                            <button onClick={() => { statusModal.akcija(); setStatusModal({...statusModal, show: false}); }} style={{ background: '#4A5D50', color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Potvrdi</button>
+                            <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: '#D4A5BC', color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Odustani</button>
+                        </>
+                    ) : (
+                        <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: '#4A5D50', color: 'white', border: 'none', padding: '12px 40px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>U REDU</button>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
+
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h1 style={{ color: '#4A5D50', marginBottom: '30px' }}>Upravljanje Uslugama</h1>
         
         <div style={{ background: 'white', padding: '20px', borderRadius: '15px', marginBottom: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h3 style={{ margin: 0, color: editId ? '#D4A5BC' : '#4A5D50' }}>
-              {editId ? `Izmena usluge (ID: ${editId})` : 'Dodaj Novu Uslugu'}
+              {editId ? `Izmena usluge: ${formData.naziv}` : 'Dodaj Novu Uslugu'}
             </h3>
-            
             
             <button 
               type="button" 
@@ -143,7 +177,6 @@ const AdminUsluge = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ backgroundColor: '#4A5D50', color: 'white', textAlign: 'left' }}>
-                <th style={{ padding: '20px' }}>ID</th>
                 <th style={{ padding: '20px' }}>Naziv</th>
                 <th style={{ padding: '20px' }}>Cena</th>
                 <th style={{ padding: '20px' }}>Akcije</th>
@@ -154,13 +187,12 @@ const AdminUsluge = () => {
                 const currentId = u.id || u.Id || u.ID;
                 return (
                   <tr key={currentId} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '18px', color: '#888' }}>{currentId}</td>
-                    <td style={{ padding: '18px' }}>{u.naziv || u.Naziv}</td>
+                    <td style={{ padding: '18px', fontWeight: '500' }}>{u.naziv || u.Naziv}</td>
                     <td style={{ padding: '18px' }}>{u.cena || u.Cena} RSD</td>
                     <td style={{ padding: '18px' }}>
                       <button 
                         onClick={() => pripremiIzmenu(u)} 
-                        style={{ color: '#4A5D50', border: 'none', background: 'none', fontWeight: 'bold', marginRight: '10px', cursor: 'pointer' }}
+                        style={{ color: '#4A5D50', border: 'none', background: 'none', fontWeight: 'bold', marginRight: '15px', cursor: 'pointer' }}
                       >
                         Izmeni
                       </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '../components/Footer';
+// Uklonjen import Footera jer je on sada globalan
 import { Globe, Shield, Users, Calendar } from 'lucide-react';
 
 import mainHero from '../assets/homepage.png'; 
@@ -150,10 +150,7 @@ const Pocetna = () => {
             ))}
           </div>
         </section>
-
-        <div id="kontakt-sekcija">
-          <Footer />
-        </div>
+        <div id="kontakt-sekcija"></div>
       </div>
     </div>
   );

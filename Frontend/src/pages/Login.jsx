@@ -8,31 +8,55 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  // Stanje za modal
+  const [statusModal, setStatusModal] = useState({
+    show: false,
+    naslov: '',
+    poruka: '',
+    tip: 'info' // 'success' ili 'error'
+  });
+
   const paleta = {
     white: '#F4F2F3',
     purple: '#C0A9BD',
     blueGray: '#94A7AE',
     olive: '#64766A',
-    text: '#1a2a3a'
+    text: '#1a2a3a',
+    crvena: '#C0392B',
+    zelena: '#4A5D50'
+  };
+
+  const prikaziPoruku = (naslov, poruka, tip) => {
+    setStatusModal({ show: true, naslov, poruka, tip });
+  };
+
+  const zatvoriModal = () => {
+    setStatusModal({ ...statusModal, show: false });
+    // Ako je bio uspeh, navigiraj na početnu tek nakon zatvaranja modala
+    if (statusModal.tip === 'success') {
+      navigate('/');
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    
     if (email === 'admin@gmail.com' && password === 'admin123') {
-      console.log("Prijava kao Admin (Simulacija)");
-      
+      const adminUser = {
+        Id: 0,
+        Uloga: "Admin",
+        Ime: "Glavni",
+        Prezime: "Administrator"
+      };
+
       localStorage.setItem('token', 'fake-admin-token-123');
+      localStorage.setItem('user', JSON.stringify(adminUser));
       localStorage.setItem('role', 'Admin');
       localStorage.setItem('userId', '0');
-      localStorage.setItem('userName', 'Glavni');
-      localStorage.setItem('userSurname', 'Administrator');
 
-      navigate('/'); 
-      return; 
+      prikaziPoruku("Uspešna prijava", "Dobrodošli nazad, gospodine administratore.", "success");
+      return;
     }
-    // -------------------------------
 
     try {
       const response = await axios.post('http://localhost:5169/api/login', {
@@ -40,19 +64,30 @@ const Login = () => {
         Password: password
       });
 
-      console.log("Uspešan login:", response.data);
+      const user = {
+        Id: response.data.Id,
+        Uloga: response.data.Role,
+        Ime: response.data.Ime,
+        Prezime: response.data.Prezime
+      };
 
       localStorage.setItem('token', response.data.Token);
+      localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('role', response.data.Role);
       localStorage.setItem('userId', response.data.Id);
       localStorage.setItem('userName', response.data.Ime);
       localStorage.setItem('userSurname', response.data.Prezime);
 
-      navigate('/'); 
+      prikaziPoruku("Uspešna prijava", `Dobro došli, ${user.Ime}!`, "success");
 
     } catch (err) {
       console.error(err);
-      alert("Greška pri prijavi: " + (err.response?.data || "Proverite podatke"));
+      // Umesto alert-a, zovemo našu funkciju
+      prikaziPoruku(
+        "Greška pri prijavi", 
+        err.response?.data || "Pogrešan email ili lozinka. Molimo pokušajte ponovo.", 
+        "error"
+      );
     }
   };
 
@@ -65,6 +100,26 @@ const Login = () => {
       backgroundColor: paleta.white,
       fontFamily: "'Playfair Display', serif"
     }}>
+      
+      {/* --- MODAL ZA STATUSE (GRESKA / USPEH) --- */}
+      {statusModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+            <div style={{ background: 'white', padding: '30px', borderRadius: '20px', width: '380px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                <h3 style={{ color: statusModal.tip === 'error' ? paleta.crvena : paleta.olive, marginBottom: '15px' }}>{statusModal.naslov}</h3>
+                <p style={{ color: '#666', marginBottom: '25px', fontFamily: "'Montserrat', sans-serif" }}>{statusModal.poruka}</p>
+                <button 
+                  onClick={zatvoriModal} 
+                  style={{ 
+                    background: statusModal.tip === 'error' ? paleta.crvena : paleta.olive, 
+                    color: 'white', border: 'none', padding: '10px 30px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' 
+                  }}
+                >
+                  U REDU
+                </button>
+            </div>
+        </div>
+      )}
+
       <a href="/" style={{ 
         position: 'absolute', top: '40px', left: '40px', 
         display: 'flex', alignItems: 'center', gap: '8px', 

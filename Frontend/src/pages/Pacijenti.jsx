@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Footer from '../components/Footer';
 
 const Pacijenti = () => {
   const [pacijenti, setPacijenti] = useState([]);
@@ -17,6 +16,18 @@ const Pacijenti = () => {
     brojTelefona: ''
   });
 
+  const [statusModal, setStatusModal] = useState({ 
+    show: false, 
+    naslov: '', 
+    poruka: '', 
+    tip: 'info', 
+    akcija: null 
+  });
+
+  const prikaziPoruku = (naslov, poruka, tip = 'info', akcija = null) => {
+    setStatusModal({ show: true, naslov, poruka, tip, akcija });
+  };
+
   const role = localStorage.getItem('role');
   const isAdmin = role === 'Admin';
 
@@ -29,7 +40,6 @@ const Pacijenti = () => {
     siva: '#CCCCCC'
   };
 
-  
   const popuniTestnePodatke = () => {
     const imena = ['Marko', 'Nikola', 'Jelena', 'Milica', 'Stefan', 'Ana', 'Luka', 'Sara'];
     const prezimena = ['Marković', 'Petrović', 'Jovanović', 'Nikolić', 'Kostić', 'Lukić', 'Ivić'];
@@ -37,7 +47,6 @@ const Pacijenti = () => {
     const rIme = imena[Math.floor(Math.random() * imena.length)];
     const rPrezime = prezimena[Math.floor(Math.random() * prezimena.length)];
     const rBroj = Math.floor(100 + Math.random() * 900);
-    
     
     let rJmbg = "";
     for(let i=0; i<13; i++) {
@@ -50,10 +59,9 @@ const Pacijenti = () => {
       email: `${rIme.toLowerCase()}.${rPrezime.toLowerCase()}${rBroj}@gmail.com`,
       lozinka: 'pac123',
       jmbg: rJmbg,
-      brojTelefona: `06${Math.floor(Math.random() * 90000000)}`
+      brojTelefona: `06${Math.floor(10000000 + Math.random() * 80000000)}`
     });
   };
-  
 
   const fetchPacijente = async () => {
     try {
@@ -72,11 +80,11 @@ const Pacijenti = () => {
   const validirajPodatke = () => {
     const { ime, prezime, email, jmbg, brojTelefona } = formData;
     if(!ime || !prezime || !email || !jmbg || !brojTelefona) {
-      alert("Sva polja su obavezna!");
+      prikaziPoruku("Pažnja", "Sva polja su obavezna!");
       return false;
     }
     if (!/^\d{13}$/.test(jmbg)) {
-      alert("JMBG mora imati 13 cifara!");
+      prikaziPoruku("Greška", "JMBG mora imati tačno 13 cifara!");
       return false;
     }
     return true;
@@ -87,26 +95,33 @@ const Pacijenti = () => {
     try {
       const payload = { ...formData, lozinka: formData.lozinka || "pac123" };
       await axios.post('http://localhost:5169/api/pacijent', payload);
-      alert("Pacijent dodat!");
+      prikaziPoruku("Uspeh", "Pacijent je uspešno dodat u bazu.");
       setShowAddForm(false);
       resetForm();
       fetchPacijente();
-    } catch (err) { alert(err.response?.data || "Greška!"); }
+    } catch (err) { 
+        prikaziPoruku("Greška", err.response?.data || "Došlo je do greške pri dodavanju.");
+    }
   };
 
   const sacuvajIzmene = async () => {
     if(!validirajPodatke()) return;
     try {
-      await axios.put(`http://localhost:5169/api/pacijent/${editId}`, formData);
-      alert("Izmenjeno!");
+      // Čistimo ID za svaki slučaj
+      const cistEditId = editId.toString().split(':')[0];
+      await axios.put(`http://localhost:5169/api/pacijent/${cistEditId}`, formData);
+      prikaziPoruku("Uspeh", "Podaci o pacijentu su uspešno ažurirani.");
       setEditId(null);
       resetForm();
       fetchPacijente();
-    } catch (err) { alert(err.response?.data || "Greška!"); }
+    } catch (err) { 
+        prikaziPoruku("Greška", "Nije moguće sačuvati izmene.");
+    }
   };
 
   const pokreniIzmenu = (p) => {
-    setEditId(p.id || p.Id);
+    const rawId = p.id || p.Id;
+    setEditId(rawId);
     setShowAddForm(false);
     setFormData({
       ime: p.ime || p.Ime,
@@ -119,20 +134,65 @@ const Pacijenti = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const obrisi = async (id) => {
-    if(window.confirm("Da li ste sigurni?")) {
-      try {
-        await axios.delete(`http://localhost:5169/api/pacijent/${id}`);
-        alert("Obrisano!");
-        fetchPacijente();
-      } catch (err) { alert("Greška pri brisanju!"); }
-    }
+  const obrisi = (rawId) => {
+    if(!rawId) return;
+
+    // KLJUČNA IZMENA: Čistimo ID od sufiksa tipa ":1"
+    const idZaSlanje = rawId.toString().split(':')[0];
+
+    prikaziPoruku(
+        "Brisanje", 
+        "Da li ste sigurni da želite da obrišete ovog pacijenta?", 
+        "confirm", 
+        async () => {
+            try {
+                await axios.delete(`http://localhost:5169/api/pacijent/${idZaSlanje}`);
+                fetchPacijente();
+            } catch (err) { 
+                console.error("Greška pri brisanju:", err);
+                
+                // Ako je greška 400, verovatno su termini, ako je nešto drugo, ispiši šta je
+                const status = err.response?.status;
+                const porukaServera = err.response?.data;
+
+                if (status === 400) {
+                    prikaziPoruku(
+                        "Nije moguće obrisati", 
+                        "Ovaj pacijent verovatno ima povezane podatke (termine) u bazi koji nisu obrisani.", 
+                        "info"
+                    );
+                } else {
+                    prikaziPoruku("Greška", porukaServera || "Došlo je do serverske greške.");
+                }
+            }
+        }
+    );
   };
 
   const resetForm = () => setFormData({ ime: '', prezime: '', email: '', lozinka: '', jmbg: '', brojTelefona: '' });
 
   return (
-    <div style={{ backgroundColor: paleta.pozadina, minHeight: '100vh' }}>
+    <div style={{ backgroundColor: paleta.pozadina, minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      
+      {statusModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+            <div style={{ background: 'white', padding: '35px', borderRadius: '25px', width: '400px', textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ color: paleta.zelena, fontSize: '1.8rem', marginBottom: '15px' }}>{statusModal.naslov}</h3>
+                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.4' }}>{statusModal.poruka}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    {statusModal.tip === 'confirm' ? (
+                        <>
+                            <button onClick={() => { statusModal.akcija(); setStatusModal({...statusModal, show: false}); }} style={{ background: paleta.zelena, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Potvrdi</button>
+                            <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: paleta.roze, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Odustani</button>
+                        </>
+                    ) : (
+                        <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: paleta.zelena, color: 'white', border: 'none', padding: '12px 40px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>U REDU</button>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
+
       <div style={{ padding: '120px 8% 60px 8%' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -140,7 +200,7 @@ const Pacijenti = () => {
           {isAdmin && (
             <button 
               onClick={() => { if(editId) setEditId(null); setShowAddForm(!showAddForm); resetForm(); }}
-              style={{ backgroundColor: paleta.roze, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', marginTop: '15px' }}
+              style={{ backgroundColor: paleta.roze, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', marginTop: '15px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
             >
               {showAddForm || editId ? "Zatvori formu" : "+ Dodaj Novog Pacijenta"}
             </button>
@@ -148,16 +208,16 @@ const Pacijenti = () => {
         </div>
 
         {isAdmin && (showAddForm || editId) && (
-          <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '15px', marginBottom: '30px', border: `2px solid ${paleta.roze}` }}>
+          <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '15px', marginBottom: '30px', border: `2px solid ${paleta.roze}`, boxShadow: '0 5px 20px rgba(0,0,0,0.05)' }}>
             <h3 style={{ color: paleta.zelena, marginBottom: '20px' }}>
-                {editId ? `Izmena: ${formData.ime}` : "Novi Pacijent"}
+                {editId ? `Izmena: ${formData.ime} ${formData.prezime}` : "Novi Pacijent"}
             </h3>
             
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd'}} value={formData.ime} onChange={e => setFormData({...formData, ime: e.target.value})} placeholder="Ime" />
               <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd'}} value={formData.prezime} onChange={e => setFormData({...formData, prezime: e.target.value})} placeholder="Prezime" />
               <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd'}} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="Email adresa" />
-              <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd'}} value={formData.jmbg} disabled={!!editId} onChange={e => setFormData({...formData, jmbg: e.target.value.replace(/\D/g, '').substring(0, 13)})} placeholder="JMBG (13 cifara)" />
+              <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd', backgroundColor: editId ? '#f9f9f9' : 'white'}} value={formData.jmbg} disabled={!!editId} onChange={e => setFormData({...formData, jmbg: e.target.value.replace(/\D/g, '').substring(0, 13)})} placeholder="JMBG (13 cifara)" />
               <input style={{padding:'10px', flex:'1 1 200px', borderRadius:'5px', border: '1px solid #ddd'}} value={formData.brojTelefona} onChange={e => setFormData({...formData, brojTelefona: e.target.value})} placeholder="Telefon (npr. 064...)" />
               {!editId && <input type="password" style={{padding:'10px', flex:'1 1 100%', borderRadius:'5px', border: '1px solid #ddd', marginTop: '10px'}} value={formData.lozinka} onChange={e => setFormData({...formData, lozinka: e.target.value})} placeholder="Lozinka (default: pac123)" />}
             </div>
@@ -170,7 +230,6 @@ const Pacijenti = () => {
                 {editId ? "Sačuvaj izmene" : "Dodaj u bazu"}
               </button>
 
-              
               {!editId && (
                 <button 
                     onClick={popuniTestnePodatke}
@@ -191,8 +250,8 @@ const Pacijenti = () => {
           </div>
         )}
 
-        {loading ? <h2 style={{textAlign:'center'}}>Učitavanje...</h2> : (
-          <div style={{ backgroundColor: 'white', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
+        {loading ? <h2 style={{textAlign:'center', color: paleta.zelena}}>Učitavanje...</h2> : (
+          <div style={{ backgroundColor: 'white', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: paleta.zelena, color: 'white', textAlign: 'left' }}>
@@ -203,25 +262,31 @@ const Pacijenti = () => {
                 </tr>
               </thead>
               <tbody>
-                {pacijenti.map(p => (
-                  <tr key={p.id || p.Id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '18px' }}>{p.ime} {p.prezime}</td>
-                    <td style={{ padding: '18px' }}>{p.email}<br/><small style={{color: '#666'}}>{p.brojTelefona}</small></td>
-                    <td style={{ padding: '18px' }}>{p.jmbg}</td>
-                    {isAdmin && (
+                {pacijenti.map(p => {
+                  const aktuelniId = p.id || p.Id;
+                  return (
+                    <tr key={aktuelniId} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '18px', fontWeight: '500' }}>{p.ime || p.Ime} {p.prezime || p.Prezime}</td>
                       <td style={{ padding: '18px' }}>
-                        <button onClick={() => pokreniIzmenu(p)} style={{ color: paleta.zelena, border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold', marginRight: '15px' }}>Izmeni</button>
-                        <button onClick={() => obrisi(p.id || p.Id)} style={{ color: '#D32F2F', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Obriši</button>
+                          <div style={{color: paleta.tekst}}>{p.email || p.Email}</div>
+                          <small style={{color: '#666'}}>{p.brojTelefona || p.BrojTelefona || '/'}</small>
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td style={{ padding: '18px', color: '#666' }}>{p.jmbg || p.Jmbg}</td>
+                      {isAdmin && (
+                        <td style={{ padding: '18px' }}>
+                          <button onClick={() => pokreniIzmenu(p)} style={{ color: paleta.zelena, border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold', marginRight: '15px' }}>Izmeni</button>
+                          <button onClick={() => obrisi(aktuelniId)} style={{ color: '#D32F2F', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Obriši</button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {pacijenti.length === 0 && <p style={{textAlign:'center', padding:'30px'}}>Trenutno nema registrovanih pacijenata.</p>}
           </div>
         )}
       </div>
-      <Footer />
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Footer from '../components/Footer';
 
 const Stomatolozi = () => {
   const [stomatolozi, setStomatolozi] = useState([]);
@@ -18,6 +17,19 @@ const Stomatolozi = () => {
     brojTelefona: ''
   });
 
+  // --- MODAL STATE ---
+  const [statusModal, setStatusModal] = useState({ 
+    show: false, 
+    naslov: '', 
+    poruka: '', 
+    tip: 'info', 
+    akcija: null 
+  });
+
+  const prikaziPoruku = (naslov, poruka, tip = 'info', akcija = null) => {
+    setStatusModal({ show: true, naslov, poruka, tip, akcija });
+  };
+
   const role = localStorage.getItem('role');
   const isAdmin = role === 'Admin';
 
@@ -30,7 +42,6 @@ const Stomatolozi = () => {
     svetloSiva: '#f8f9fa'
   };
 
-  
   const popuniTestnePodatke = () => {
     const muskaImena = ['Dragan', 'Zoran', 'Goran', 'Marko', 'Nikola'];
     const zenskaImena = ['Milica', 'Ana', 'Jelena', 'Marija', 'Ivana'];
@@ -41,25 +52,22 @@ const Stomatolozi = () => {
     const rPrezime = prezimena[Math.floor(Math.random() * prezimena.length)];
     const rBroj = Math.floor(100 + Math.random() * 899);
     
-    
     let rJmbg = "";
     for(let i=0; i<13; i++) rJmbg += Math.floor(Math.random() * 10).toString();
 
-    
     let rLicenca = "LIC-";
     for(let i=0; i<5; i++) rLicenca += Math.floor(Math.random() * 10).toString();
 
     setFormData({
       ime: rIme,
       prezime: rPrezime,
-      email: `dr.${rIme.toLowerCase()}.${rPrezime.toLowerCase()}${rBroj}@stomatologija.rs`,
+      email: `dr.${rIme.toLowerCase()}.${rPrezime.toLowerCase()}${rBroj}@gmail.com`,
       brojLicence: rLicenca,
       lozinka: 'stom123',
       jmbg: rJmbg,
       brojTelefona: `06${Math.floor(4 + Math.random() * 2)}${Math.floor(1000000 + Math.random() * 8999999)}`
     });
   };
-  
 
   const fetchStomatolozi = async () => {
     try {
@@ -93,7 +101,7 @@ const Stomatolozi = () => {
     const { ime, prezime, email, brojLicence, jmbg, brojTelefona } = formData;
 
     if(!ime || !prezime || !email || !brojLicence || !jmbg || !brojTelefona) {
-      alert("Sva polja su obavezna!");
+      prikaziPoruku("Pažnja", "Sva polja su obavezna!");
       return false;
     }
 
@@ -101,58 +109,52 @@ const Stomatolozi = () => {
       (s.email || s.Email).toLowerCase() === email.toLowerCase() && (isEdit ? (s.id || s.Id) !== editId : true)
     );
     if(proveraEmail) {
-      alert("Ovaj email je već zauzet!");
+      prikaziPoruku("Greška", "Ovaj email je već zauzet!");
       return false;
     }
 
     if (!/^\d{13}$/.test(jmbg)) {
-      alert("JMBG mora imati tačno 13 cifara!");
+      prikaziPoruku("Greška", "JMBG mora imati tačno 13 cifara!");
       return false;
     }
+    
     const proveraJmbg = stomatolozi.find(s => 
       (s.jmbg || s.Jmbg) === jmbg && (isEdit ? (s.id || s.Id) !== editId : true)
     );
     if(proveraJmbg) {
-      alert("Korisnik sa ovim JMBG-om već postoji!");
+      prikaziPoruku("Greška", "Korisnik sa ovim JMBG-om već postoji!");
       return false;
     }
 
     if (!/^06\d{7,8}$/.test(brojTelefona)) {
-      alert("Broj telefona mora početi sa '06' i imati ukupno 9 ili 10 cifara!");
+      prikaziPoruku("Greška", "Broj telefona mora početi sa '06' i imati 9 ili 10 cifara!");
       return false;
     }
 
     if (!/^LIC-\d{5}$/.test(brojLicence)) {
-      alert("Licenca mora biti u formatu LIC- i tačno 5 cifara nakon toga!");
-      return false;
-    }
-    const proveraLicence = stomatolozi.find(s => 
-      (s.brojLicence || s.BrojLicence) === brojLicence && (isEdit ? (s.id || s.Id) !== editId : true)
-    );
-    if(proveraLicence) {
-      alert("Ovaj broj licence je već registrovan!");
+      prikaziPoruku("Greška", "Licenca mora biti u formatu LIC- i 5 cifara!");
       return false;
     }
 
     return true;
   };
 
-  const obrisi = async (id) => {
-    if(!id) {
-      alert("Greška: ID nije pronađen!");
-      return;
-    }
-
-    if(window.confirm("Da li ste sigurni? Brisanje stomatologa uklanja i sve njegove termine!")) {
-      try {
-        await axios.delete(`http://localhost:5169/api/korisnik/stomatolozi/${id}`);
-        alert("Stomatolog obrisan!");
-        fetchStomatolozi();
-      } catch (err) {
-        console.error("Detalji greške:", err.response);
-        alert(`Greška: ${err.response?.data || "Proverite konzolu"}`);
+  const obrisi = (id) => {
+    if(!id) return;
+    prikaziPoruku(
+      "Brisanje", 
+      "Da li ste sigurni? Brisanje stomatologa uklanja i sve njegove termine!", 
+      "confirm", 
+      async () => {
+        try {
+          await axios.delete(`http://localhost:5169/api/korisnik/stomatolozi/${id}`);
+          prikaziPoruku("Uspeh", "Stomatolog je uspešno obrisan.");
+          fetchStomatolozi();
+        } catch (err) {
+          prikaziPoruku("Greška", "Greška pri brisanju! Stomatolog ima zakazane termine!");
+        }
       }
-    }
+    );
   };
 
   const handleDodaj = async () => {
@@ -163,14 +165,13 @@ const Stomatolozi = () => {
           ...formData,
           lozinka: formData.lozinka || "stom123"
       };
-
       await axios.post('http://localhost:5169/api/korisnik/stomatolozi', payload);
-      alert("Novi stomatolog dodat!");
+      prikaziPoruku("Uspeh", "Novi stomatolog dodat u sistem!");
       setShowAddForm(false);
       resetForm();
       fetchStomatolozi();
     } catch (err) {
-      alert(err.response?.data || "Greška pri dodavanju na serveru!");
+      prikaziPoruku("Greška", err.response?.data || "Greška pri dodavanju!");
     }
   };
 
@@ -195,12 +196,12 @@ const Stomatolozi = () => {
 
     try {
       await axios.put(`http://localhost:5169/api/korisnik/stomatolozi/${editId}`, formData);
-      alert("Uspešno izmenjeno!");
+      prikaziPoruku("Uspeh", "Podaci o stomatologu su izmenjeni.");
       setEditId(null);
       resetForm();
       fetchStomatolozi();
     } catch (err) {
-      alert(err.response?.data || "Greška pri čuvanju izmena!");
+      prikaziPoruku("Greška", err.response?.data || "Greška pri čuvanju!");
     }
   };
 
@@ -210,6 +211,27 @@ const Stomatolozi = () => {
 
   return (
     <div style={{ backgroundColor: paleta.pozadina, minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      
+      {/* --- CUSTOM MODAL --- */}
+      {statusModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+            <div style={{ background: 'white', padding: '35px', borderRadius: '25px', width: '400px', textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ color: paleta.zelena, fontSize: '1.8rem', marginBottom: '15px' }}>{statusModal.naslov}</h3>
+                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.4' }}>{statusModal.poruka}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    {statusModal.tip === 'confirm' ? (
+                        <>
+                            <button onClick={() => { statusModal.akcija(); setStatusModal({...statusModal, show: false}); }} style={{ background: paleta.zelena, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Potvrdi</button>
+                            <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: paleta.roze, color: 'white', border: 'none', padding: '12px 25px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Odustani</button>
+                        </>
+                    ) : (
+                        <button onClick={() => setStatusModal({...statusModal, show: false})} style={{ background: paleta.zelena, color: 'white', border: 'none', padding: '12px 40px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold' }}>U REDU</button>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
+
       <div style={{ padding: '120px 8% 60px 8%', boxSizing: 'border-box' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -232,7 +254,7 @@ const Stomatolozi = () => {
         {isAdmin && (showAddForm || editId) && (
           <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '15px', marginBottom: '30px', boxShadow: '0 5px 20px rgba(0,0,0,0.1)', border: `2px solid ${paleta.roze}` }}>
             <h3 style={{ color: paleta.zelena, marginTop: 0 }}>
-              {editId ? `Izmena: dr ${formData.ime}` : "Novi Stomatolog"}
+              {editId ? `Izmena: dr ${formData.ime} ${formData.prezime}` : "Novi Stomatolog"}
             </h3>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
               <input 
@@ -259,7 +281,7 @@ const Stomatolozi = () => {
               />
               <input 
                 type="text"
-                style={{ padding: '10px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: editId ? '#eee' : 'white' }} 
+                style={{ padding: '10px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: editId ? '#f9f9f9' : 'white' }} 
                 value={formData.brojLicence} 
                 onChange={handleLicenceChange} 
                 onFocus={(e) => { if(!formData.brojLicence) setFormData({...formData, brojLicence: 'LIC-'}) }}
@@ -269,7 +291,7 @@ const Stomatolozi = () => {
               />
               <input 
                 type="text"
-                style={{ padding: '10px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: editId ? '#eee' : 'white' }} 
+                style={{ padding: '10px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: editId ? '#f9f9f9' : 'white' }} 
                 value={formData.jmbg} 
                 onChange={e => setFormData({...formData, jmbg: e.target.value.replace(/\D/g, '').substring(0, 13)})} 
                 placeholder="JMBG (13 cifara)" 
@@ -300,7 +322,6 @@ const Stomatolozi = () => {
                 {editId ? "Sačuvaj izmene" : "Dodaj u bazu"}
               </button>
 
-              
               {!editId && (
                 <button 
                     onClick={popuniTestnePodatke}
@@ -357,7 +378,6 @@ const Stomatolozi = () => {
           </div>
         )}
       </div>
-      <Footer />
     </div>
   );
 };
