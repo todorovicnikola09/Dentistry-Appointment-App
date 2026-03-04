@@ -42,7 +42,7 @@ const Pacijenti = () => {
 
   const popuniTestnePodatke = () => {
     const imena = ['Marko', 'Nikola', 'Jelena', 'Milica', 'Stefan', 'Ana', 'Luka', 'Sara'];
-    const prezimena = ['Marković', 'Petrović', 'Jovanović', 'Nikolić', 'Kostić', 'Lukić', 'Ivić'];
+    const prezimena = ['Markovic', 'Petrovic', 'Jovanovic', 'Nikolic', 'Kostic', 'Lukic', 'Ivic'];
     
     const rIme = imena[Math.floor(Math.random() * imena.length)];
     const rPrezime = prezimena[Math.floor(Math.random() * prezimena.length)];
@@ -87,6 +87,11 @@ const Pacijenti = () => {
       prikaziPoruku("Greška", "JMBG mora imati tačno 13 cifara!");
       return false;
     }
+    if (!/^06\d{7,8}$/.test(brojTelefona)) {
+      prikaziPoruku("Greška", "Broj telefona mora početi sa 06 i imati ukupno 9 ili 10 cifara (npr. 064123456)!");
+      return false;
+    }
+
     return true;
   };
 
@@ -107,7 +112,6 @@ const Pacijenti = () => {
   const sacuvajIzmene = async () => {
     if(!validirajPodatke()) return;
     try {
-      // Čistimo ID za svaki slučaj
       const cistEditId = editId.toString().split(':')[0];
       await axios.put(`http://localhost:5169/api/pacijent/${cistEditId}`, formData);
       prikaziPoruku("Uspeh", "Podaci o pacijentu su uspešno ažurirani.");
@@ -137,7 +141,7 @@ const Pacijenti = () => {
   const obrisi = (rawId) => {
     if(!rawId) return;
 
-    // KLJUČNA IZMENA: Čistimo ID od sufiksa tipa ":1"
+ 
     const idZaSlanje = rawId.toString().split(':')[0];
 
     prikaziPoruku(
@@ -151,7 +155,7 @@ const Pacijenti = () => {
             } catch (err) { 
                 console.error("Greška pri brisanju:", err);
                 
-                // Ako je greška 400, verovatno su termini, ako je nešto drugo, ispiši šta je
+                
                 const status = err.response?.status;
                 const porukaServera = err.response?.data;
 

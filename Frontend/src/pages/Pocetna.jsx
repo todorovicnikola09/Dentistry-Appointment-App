@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Uklonjen import Footera jer je on sada globalan
+
 import { Globe, Shield, Users, Calendar } from 'lucide-react';
 
 import mainHero from '../assets/homepage.png'; 
@@ -44,7 +44,7 @@ const Pocetna = () => {
       boxSizing: 'border-box'
     }}>
       
-      {/* HERO SEKCIJA */}
+    
       <header style={{
         height: '100vh',
         width: '100%',
@@ -84,7 +84,7 @@ const Pocetna = () => {
             Otkrijte moć digitalne stomatologije u službi vašeg zdravlja. Dizajniramo osmehe koji zrače samopouzdanjem.
           </p>
           
-          {/* USLOVNI RENDER ZA DUGME */}
+         
           {trebaPrikazatiDugme && (
             <button 
               onClick={() => navigate('/usluge')}
@@ -100,10 +100,10 @@ const Pocetna = () => {
         </div>
       </header>
 
-      {/* SADRŽAJ */}
+     
       <div style={{ position: 'relative', zIndex: 10, backgroundColor: '#fff', width: '100%', boxSizing: 'border-box' }}>
         
-        {/* Hollywood Smile */}
+       
         <section style={{ padding: '140px 10%', display: 'flex', alignItems: 'center', gap: '100px', flexWrap: 'wrap', boxSizing: 'border-box' }}>
           <div style={{ flex: '1 1 500px' }}>
             <span style={{ color: paleta.blueGray, fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '1.1rem' }}>Estetika</span>
@@ -118,7 +118,7 @@ const Pocetna = () => {
           </div>
         </section>
 
-        {/* Nevidljive proteze */}
+        
         <section style={{ padding: '140px 10%', display: 'flex', alignItems: 'center', gap: '100px', flexWrap: 'wrap', flexDirection: 'row-reverse', backgroundColor: paleta.white, boxSizing: 'border-box' }}>
           <div style={{ flex: '1 1 500px' }}>
             <span style={{ color: paleta.olive, fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '1.1rem' }}>Ortodoncija</span>

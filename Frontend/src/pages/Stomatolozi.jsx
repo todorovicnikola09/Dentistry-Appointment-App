@@ -17,7 +17,7 @@ const Stomatolozi = () => {
     brojTelefona: ''
   });
 
-  // --- MODAL STATE ---
+ 
   const [statusModal, setStatusModal] = useState({ 
     show: false, 
     naslov: '', 
@@ -212,7 +212,7 @@ const Stomatolozi = () => {
   return (
     <div style={{ backgroundColor: paleta.pozadina, minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
       
-      {/* --- CUSTOM MODAL --- */}
+     
       {statusModal.show && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
             <div style={{ background: 'white', padding: '35px', borderRadius: '25px', width: '400px', textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)' }}>

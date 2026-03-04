@@ -6,7 +6,7 @@ const AdminUsluge = () => {
   const [formData, setFormData] = useState({ naziv: '', opis: '', cena: '' });
   const [editId, setEditId] = useState(null);
 
-  // MODAL STATE ZA PORUKE
+  
   const [statusModal, setStatusModal] = useState({ 
     show: false, 
     naslov: '', 
@@ -22,9 +22,13 @@ const AdminUsluge = () => {
   const popuniTestnuUslugu = () => {
     const randomUsluge = [
       { n: "Izbeljivanje Zuba 4K", c: 15000, o: "Najsavremenija metoda hladnim laserom." },
-      { n: "Dečija Stomatologija", c: 3000, o: "Bezbolna popravka zuba za najmlađe." },
-      { n: "Ortodoncija Fixna", c: 85000, o: "Metalna fiksna proteza vrhunskog kvaliteta." },
-      { n: "Cirkonijum krunice", c: 22000, o: "Vrhunska estetika i prirodan izgled zuba." }
+            { n: "Dečija Stomatologija", c: 3000, o: "Bezbolna popravka zuba za najmlađe." },
+            { n: "Ortodoncija Fixna", c: 85000, o: "Metalna fiksna proteza vrhunskog kvaliteta." },
+            { n: "Kompozitni Faset", c: 12000, o: "Estetsko korigovanje oblika i boje zuba." },
+            { n: "Bezmetalna Keramika", c: 28000, o: "Najkvalitetnija protetika za savršen osmeh." },
+            { n: "Ugradnja Implantata", c: 65000, o: "Premium titanijumski implantat sa garancijom." },
+            { n: "Hirurško Vađenje Uma", c: 15000, o: "Bezbolna hirurška intervencija uz lokalnu anesteziju." },
+            { n: "Mašinsko Lečenje Kanala", c: 75000, o: "Endodontski tretman najnovijom tehnologijom." }
     ];
     const r = randomUsluge[Math.floor(Math.random() * randomUsluge.length)];
     setFormData({ naziv: r.n, cena: r.c, opis: r.o });
@@ -46,6 +50,24 @@ const AdminUsluge = () => {
         prikaziPoruku("Pažnja", "Molimo popunite naziv i cenu.");
         return;
     }
+
+   
+    if (parseFloat(formData.cena) < 0) {
+        prikaziPoruku("Greška", "Cena ne može biti negativan broj.");
+        return;
+    }
+
+    const nazivPostoji = usluge.some(u => 
+        (u.naziv || u.Naziv || "").toLowerCase().trim() === formData.naziv.toLowerCase().trim() && 
+        (u.id || u.Id || u.ID) !== editId
+    );
+
+    if (nazivPostoji) {
+        prikaziPoruku("Greška", "Usluga sa ovim nazivom već postoji.");
+        return;
+    }
+
+
 
     try {
       const model = {
@@ -104,7 +126,7 @@ const AdminUsluge = () => {
   return (
     <div style={{ padding: '120px 40px 40px 40px', backgroundColor: '#F4F2F3', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
       
-      {/* --- CUSTOM MODAL (ISTI KAO NA PROŠLOJ STRANICI) --- */}
+      
       {statusModal.show && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
             <div style={{ background: 'white', padding: '35px', borderRadius: '25px', width: '400px', textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)' }}>

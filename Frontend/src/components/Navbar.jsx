@@ -115,22 +115,23 @@ const Navbar = () => {
                 paddingRight: '20px',
                 borderRight: `1px solid ${isHome ? 'rgba(255,255,255,0.3)' : paleta.sivaLinija}`
             }}>
-                Zdravo, <b style={{color: role === 'Admin' ? paleta.adminZlatna : (isHome ? paleta.bela : paleta.zelena)}}>
-                  {role === 'Admin' ? 'Admin ' : ''}{ime} {prezime !== "undefined" ? prezime : ""}
+                Zdravo, <b style={{color: (role === 'Admin' || role === 'admin') ? paleta.adminZlatna : (isHome ? paleta.bela : paleta.zelena)}}>
+                  {(role === 'Admin' || role === 'admin') ? 'Admin ' : ''}{ime} {prezime !== "undefined" ? prezime : ""}
                 </b>
             </span>
 
-            <Link to="/" style={role === 'Admin' ? adminLinkStyle : linkStyle}>Početna</Link>
+            <Link to="/" style={(role === 'Admin' || role === 'admin') ? adminLinkStyle : linkStyle}>Početna</Link>
 
-            {role === 'Admin' ? (
+            {(role === 'Admin' || role === 'admin') ? (
               <>
                 <Link to="/admin/pacijenti" style={adminLinkStyle}>Pacijenti</Link>
                 <Link to="/admin/stomatolozi" style={adminLinkStyle}>Stomatolozi</Link>
                 <Link to="/admin/usluge" style={adminLinkStyle}>Usluge</Link>
+                <Link to="/admin/mentori" style={{...adminLinkStyle, color: paleta.adminZlatna}}>Mentori</Link>
               </>
             ) : (
               <>
-                {role !== 'Stomatolog' && (
+                {(role !== 'Stomatolog' && role !== 'stomatolog') && (
                   <Link to="/usluge" style={linkStyle}>Usluge</Link>
                 )}
                 <Link to="/moje-rezervacije" style={linkStyle}>Moji termini</Link>
