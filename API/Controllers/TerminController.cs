@@ -56,9 +56,9 @@ namespace API.Controllers
                     {
                         string updateUpit = "UPDATE Termin SET status = @status WHERE id = @id";
                         Broker.Instance().IzvrsiKomandu(updateUpit, new List<SqlParameter> {
-                            new SqlParameter("@status", noviStatus),
-                            new SqlParameter("@id", id)
-                        });
+              new SqlParameter("@status", noviStatus),
+              new SqlParameter("@id", id)
+            });
                     }
                 }
             }
@@ -71,16 +71,16 @@ namespace API.Controllers
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                ProveriIAzurirajStatuse(); 
+                ProveriIAzurirajStatuse();
 
                 string upit = @"
-                    SELECT t.id, t.datum, t.vreme, t.status, u.naziv AS UslugaNaziv, u.opis AS UslugaOpis, 
-                           k.ime AS StomIme, k.prezime AS StomPrezime
-                    FROM Termin t
-                    JOIN TerminUsluga tu ON t.id = tu.terminId
-                    JOIN Usluga u ON tu.uslugaId = u.id
-                    JOIN Korisnik k ON t.stomatologId = k.id
-                    WHERE t.pacijentId = @pId";
+                    SELECT t.id, t.datum, t.vreme, t.status, u.naziv AS UslugaNaziv, u.opis AS UslugaOpis, 
+                           k.ime AS StomIme, k.prezime AS StomPrezime
+                    FROM Termin t
+                    JOIN TerminUsluga tu ON t.id = tu.terminId
+                    JOIN Usluga u ON tu.uslugaId = u.id
+                    JOIN Korisnik k ON t.stomatologId = k.id
+                    WHERE t.pacijentId = @pId";
 
                 List<SqlParameter> parametri = new List<SqlParameter> { new SqlParameter("@pId", id) };
                 DataTable dt = Broker.Instance().IzvrsiUpit(upit, parametri);
@@ -112,16 +112,16 @@ namespace API.Controllers
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                ProveriIAzurirajStatuse(); 
+                ProveriIAzurirajStatuse();
 
                 string upit = @"
-                    SELECT t.id, t.datum, t.vreme, t.status, u.naziv AS UslugaNaziv, u.opis AS UslugaOpis, 
-                           k.ime AS PacIme, k.prezime AS PacPrezime
-                    FROM Termin t
-                    JOIN TerminUsluga tu ON t.id = tu.terminId
-                    JOIN Usluga u ON tu.uslugaId = u.id
-                    JOIN Korisnik k ON t.pacijentId = k.id
-                    WHERE t.stomatologId = @sId";
+                    SELECT t.id, t.datum, t.vreme, t.status, u.naziv AS UslugaNaziv, u.opis AS UslugaOpis, 
+                           k.ime AS PacIme, k.prezime AS PacPrezime
+                    FROM Termin t
+                    JOIN TerminUsluga tu ON t.id = tu.terminId
+                    JOIN Usluga u ON tu.uslugaId = u.id
+                    JOIN Korisnik k ON t.pacijentId = k.id
+                    WHERE t.stomatologId = @sId";
 
                 List<SqlParameter> parametri = new List<SqlParameter> { new SqlParameter("@sId", id) };
                 DataTable dt = Broker.Instance().IzvrsiUpit(upit, parametri);
@@ -158,12 +158,12 @@ namespace API.Controllers
                 TimeSpan ts = TimeSpan.Parse(req.Vreme);
                 string upitTermin = "INSERT INTO Termin (datum, vreme, pacijentId, stomatologId, status) OUTPUT INSERTED.id VALUES (@datum, @vreme, @pId, @sId, @status)";
                 List<SqlParameter> p1 = new List<SqlParameter> {
-                    new SqlParameter("@datum", SqlDbType.Date) { Value = req.Datum },
-                    new SqlParameter("@vreme", SqlDbType.Time) { Value = ts },
-                    new SqlParameter("@pId", req.PacijentId),
-                    new SqlParameter("@sId", req.StomatologId),
-                    new SqlParameter("@status", "Na čekanju")
-                };
+          new SqlParameter("@datum", SqlDbType.Date) { Value = req.Datum },
+          new SqlParameter("@vreme", SqlDbType.Time) { Value = ts },
+          new SqlParameter("@pId", req.PacijentId),
+          new SqlParameter("@sId", req.StomatologId),
+          new SqlParameter("@status", "Na čekanju")
+        };
                 DataTable dt = Broker.Instance().IzvrsiUpit(upitTermin, p1);
                 int noviId = (int)dt.Rows[0]["id"];
                 if (req.UslugaIds != null)
@@ -172,9 +172,9 @@ namespace API.Controllers
                     {
                         string upitStavka = "INSERT INTO TerminUsluga (terminId, uslugaId) VALUES (@tId, @uId)";
                         Broker.Instance().IzvrsiKomandu(upitStavka, new List<SqlParameter>{
-                            new SqlParameter("@tId", noviId),
-                            new SqlParameter("@uId", uId)
-                        });
+              new SqlParameter("@tId", noviId),
+              new SqlParameter("@uId", uId)
+            });
                     }
                 }
                 Broker.Instance().PotvrdiTransakciju();
@@ -196,13 +196,38 @@ namespace API.Controllers
                 Broker.Instance().OtvoriKonekciju();
                 string upit = "UPDATE Termin SET status = @status WHERE id = @id";
                 List<SqlParameter> parametri = new List<SqlParameter> {
-                    new SqlParameter("@status", noviStatus),
-                    new SqlParameter("@id", id)
-                };
+          new SqlParameter("@status", noviStatus),
+          new SqlParameter("@id", id)
+        };
                 Broker.Instance().IzvrsiKomandu(upit, parametri);
                 return Ok(new { Poruka = $"Termin {id} je prešao u stanje: {noviStatus}" });
             }
             catch (Exception ex) { return BadRequest("Greška pri tranziciji: " + ex.Message); }
+            finally { Broker.Instance().ZatvoriKonekciju(); }
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Obrisi(int id)
+        {
+            try
+            {
+                Broker.Instance().OtvoriKonekciju();
+                Broker.Instance().PocniTransakciju();
+
+                string upitUsluge = "DELETE FROM TerminUsluga WHERE terminId = @id";
+                Broker.Instance().IzvrsiKomandu(upitUsluge, new List<SqlParameter> { new SqlParameter("@id", id) });
+
+                string upitTermin = "DELETE FROM Termin WHERE id = @id";
+                Broker.Instance().IzvrsiKomandu(upitTermin, new List<SqlParameter> { new SqlParameter("@id", id) });
+
+                Broker.Instance().PotvrdiTransakciju();
+                return Ok("Termin uspešno obrisan.");
+            }
+            catch (Exception ex)
+            {
+                Broker.Instance().PonistiTransakciju();
+                return BadRequest("Greška pri brisanju: " + ex.Message);
+            }
             finally { Broker.Instance().ZatvoriKonekciju(); }
         }
 
@@ -214,9 +239,9 @@ namespace API.Controllers
                 Broker.Instance().OtvoriKonekciju();
                 string upit = "SELECT vreme FROM Termin WHERE stomatologId = @sId AND datum = @datum AND status != 'Odbijeno'";
                 List<SqlParameter> p = new List<SqlParameter> {
-                    new SqlParameter("@sId", stomatologId),
-                    new SqlParameter("@datum", datum)
-                };
+          new SqlParameter("@sId", stomatologId),
+          new SqlParameter("@datum", datum)
+        };
                 DataTable dt = Broker.Instance().IzvrsiUpit(upit, p);
                 List<string> zauzeta = new List<string>();
                 foreach (DataRow dr in dt.Rows)
@@ -224,9 +249,9 @@ namespace API.Controllers
                     zauzeta.Add(((TimeSpan)dr["vreme"]).ToString(@"hh\:mm"));
                 }
                 List<string> svaVremena = new List<string> {
-                    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-                    "11:00", "11:30", "12:00", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30"
-                };
+          "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+          "11:00", "11:30", "12:00", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30"
+        };
                 return Ok(svaVremena.Where(v => !zauzeta.Contains(v)).ToList());
             }
             catch (Exception ex) { return BadRequest(ex.Message); }

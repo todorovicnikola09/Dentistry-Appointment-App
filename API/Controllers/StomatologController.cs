@@ -1,9 +1,12 @@
 ﻿using BazaPodataka;
+using Domen;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using System.Data;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {
@@ -43,7 +46,7 @@ namespace API.Controllers
             try
             {
                 Broker.Instance().OtvoriKonekciju();
-                string upit = "SELECT id, ime, prezime, email, jmbg, brojTelefona, brojLicence FROM Korisnik WHERE uloga = 'Stomatolog'";
+                string upit = "SELECT id, ime, prezime, email, jmbg, brojTelefona, brojLicence, mentorId FROM Korisnik WHERE uloga = 'Stomatolog'";
                 DataTable dt = Broker.Instance().IzvrsiUpit(upit);
                 var lista = new List<object>();
                 foreach (DataRow dr in dt.Rows)
@@ -56,7 +59,8 @@ namespace API.Controllers
                         email = dr["email"].ToString(),
                         jmbg = dr["jmbg"].ToString(),
                         brojTelefona = dr["brojTelefona"].ToString(),
-                        brojLicence = dr["brojLicence"].ToString()
+                        brojLicence = dr["brojLicence"].ToString(),
+                        mentorId = dr["mentorId"] == DBNull.Value ? null : (int?)dr["mentorId"]
                     });
                 }
                 return Ok(lista);
@@ -126,6 +130,33 @@ namespace API.Controllers
                 return Ok("Uspešno izmenjeno!");
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
+            finally { Broker.Instance().ZatvoriKonekciju(); }
+        }
+
+        [HttpPut("stomatolozi/{id}/dodeli-mentora")]
+        public IActionResult DodeliMentora(int id, [FromBody] System.Text.Json.JsonElement body)
+        {
+            try
+            {
+                Broker.Instance().OtvoriKonekciju();
+
+                int? mentorId = null;
+                if (body.ValueKind != System.Text.Json.JsonValueKind.Null)
+                {
+                    mentorId = body.GetInt32();
+                }
+
+                string upit = "UPDATE Korisnik SET mentorId=@mentorId WHERE id=@id AND uloga='Stomatolog'";
+
+                List<SqlParameter> parametri = new List<SqlParameter> {
+                    new SqlParameter("@id", id),
+                    new SqlParameter("@mentorId", (object)mentorId ?? DBNull.Value)
+                };
+
+                Broker.Instance().IzvrsiKomandu(upit, parametri);
+                return Ok("Mentor uspešno dodeljen!");
+            }
+            catch (Exception ex) { return BadRequest("Greška pri dodeli mentora: " + ex.Message); }
             finally { Broker.Instance().ZatvoriKonekciju(); }
         }
 
